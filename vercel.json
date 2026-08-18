@@ -3,5 +3,11 @@
     "api/*.py": {
       "runtime": "python3.12"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/geojson.geojson",
+      "destination": "/api/geojson"
+    }
+  ]
 }
