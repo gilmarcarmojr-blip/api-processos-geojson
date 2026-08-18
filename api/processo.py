@@ -1,8 +1,8 @@
 from http.server import BaseHTTPRequestHandler
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 import json
 import urllib.request
-import re
+
 
 GEOJSON_URL = "https://raw.githubusercontent.com/gilmarcarmojr-blip/processos-geojson/refs/heads/main/teste.geojson"
 
@@ -11,26 +11,27 @@ class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         try:
-            caminho = urlparse(self.path).path
 
-            # Aceita:
-            # /api/processo/31
-            # /api/processo/31,32
-            match = re.search(r"/api/processo/(.+)$", caminho)
+            # Lê os parâmetros da URL
+            parsed = urlparse(self.path)
+            query = parse_qs(parsed.query)
 
-            if not match:
-                self.enviar_erro(404, "Ordem não informada")
-                return
+            # Exemplo:
+            # ?ordem=31
+            # ?ordem=31,32
 
-            ordens = match.group(1).split(",")
+            ordens_param = query.get("ordem", [])
 
-            ordens = [
-                ordem.strip()
-                for ordem in ordens
-                if ordem.strip()
-            ]
+            lista_ordens = []
 
-            # Carrega GeoJSON original
+            for valor in ordens_param:
+                for item in valor.split(","):
+                    item = item.strip()
+
+                    if item:
+                        lista_ordens.append(item)
+
+            # Carrega o GeoJSON
             with urllib.request.urlopen(
                 GEOJSON_URL,
                 timeout=20
@@ -40,14 +41,20 @@ class handler(BaseHTTPRequestHandler):
                     response.read().decode("utf-8")
                 )
 
-            # Filtra
-            features = [
-                feature
-                for feature in data.get("features", [])
-                if str(
-                    feature.get("properties", {}).get("ORDEM")
-                ) in ordens
-            ]
+            # Filtra pelas ordens
+            if lista_ordens:
+
+                features = [
+                    feature
+                    for feature in data.get("features", [])
+                    if str(
+                        feature.get("properties", {}).get("ORDEM")
+                    ) in lista_ordens
+                ]
+
+            else:
+
+                features = data.get("features", [])
 
             resultado = {
                 "type": "FeatureCollection",
@@ -81,26 +88,23 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(corpo)
 
         except Exception as e:
-            self.enviar_erro(500, str(e))
 
-    def enviar_erro(self, codigo, mensagem):
+            corpo = json.dumps({
+                "erro": str(e)
+            }).encode("utf-8")
 
-        corpo = json.dumps({
-            "erro": mensagem
-        }).encode("utf-8")
+            self.send_response(500)
 
-        self.send_response(codigo)
+            self.send_header(
+                "Content-Type",
+                "application/json"
+            )
 
-        self.send_header(
-            "Content-Type",
-            "application/json"
-        )
+            self.send_header(
+                "Access-Control-Allow-Origin",
+                "*"
+            )
 
-        self.send_header(
-            "Access-Control-Allow-Origin",
-            "*"
-        )
+            self.end_headers()
 
-        self.end_headers()
-
-        self.wfile.write(corpo)
+            self.wfile.write(corpo)
