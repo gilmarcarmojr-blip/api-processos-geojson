@@ -1,4 +1,10 @@
 {
+  "rewrites": [
+    {
+      "source": "/api/processo/:path*",
+      "destination": "/api/processo.py"
+    }
+  ],
   "functions": {
     "api/*.py": {
       "runtime": "python3.12"
