@@ -6,8 +6,8 @@
   },
   "rewrites": [
     {
-      "source": "/api/geojson.geojson",
-      "destination": "/api/geojson"
+      "source": "/api/processo/:ordens.geojson",
+      "destination": "/api/geojson?ordem=:ordens"
     }
   ]
 }
