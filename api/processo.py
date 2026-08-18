@@ -19,7 +19,6 @@ class handler(BaseHTTPRequestHandler):
             # Exemplo:
             # ?ordem=31
             # ?ordem=31,32
-
             ordens_param = query.get("ordem", [])
 
             lista_ordens = []
@@ -31,7 +30,7 @@ class handler(BaseHTTPRequestHandler):
                     if item:
                         lista_ordens.append(item)
 
-            # Carrega o GeoJSON
+            # Carrega o GeoJSON do GitHub
             with urllib.request.urlopen(
                 GEOJSON_URL,
                 timeout=20
@@ -41,7 +40,7 @@ class handler(BaseHTTPRequestHandler):
                     response.read().decode("utf-8")
                 )
 
-            # Filtra pelas ordens
+            # Filtra pelas ordens selecionadas
             if lista_ordens:
 
                 features = [
@@ -56,6 +55,7 @@ class handler(BaseHTTPRequestHandler):
 
                 features = data.get("features", [])
 
+            # Monta o GeoJSON de resposta
             resultado = {
                 "type": "FeatureCollection",
                 "features": features
@@ -66,11 +66,14 @@ class handler(BaseHTTPRequestHandler):
                 ensure_ascii=False
             ).encode("utf-8")
 
+            # Resposta HTTP
             self.send_response(200)
 
+            # IMPORTANTE:
+            # application/json em vez de application/geo+json
             self.send_header(
                 "Content-Type",
-                "application/geo+json"
+                "application/json"
             )
 
             self.send_header(
@@ -89,6 +92,7 @@ class handler(BaseHTTPRequestHandler):
 
         except Exception as e:
 
+            # Retorna o erro em JSON
             corpo = json.dumps({
                 "erro": str(e)
             }).encode("utf-8")
