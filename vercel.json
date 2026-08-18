@@ -3,11 +3,5 @@
     "api/*.py": {
       "runtime": "python3.12"
     }
-  },
-  "rewrites": [
-    {
-      "source": "/api/processo/:ordens.geojson",
-      "destination": "/api/geojson?ordem=:ordens"
-    }
-  ]
+  }
 }
